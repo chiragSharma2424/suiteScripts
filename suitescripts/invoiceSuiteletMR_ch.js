@@ -2,16 +2,26 @@
  * @NApiVersion 2.1
  * @NScriptType Suitelet
  */
-define(["N/ui/serverWidget", "N/task", "N/log", "N/search"], 
-function (ui, task, log, search) {
+define(["N/ui/serverWidget", "N/task", "N/log", "N/search", "N/redirect", "N/runtime"], 
+function (ui, task, log, search, redirect, runtime) {
 
   function onRequest(context) {
 
     var request = context.request;
     var response = context.response;
-    var serial = request.parameters.custpage_serial || '';
+    var taskId = request.parameters.taskid || null;
+    var srno =   request.parameters.custpage_serial || ' ';
 
-    // ---------------- CREATE FORM ---------------- //
+    log.debug("srno: ", srno);
+    log.debug("task id: ", taskId);
+    var taskStatus = null;
+    if (taskId) {
+        taskStatus = task.checkStatus({ taskId: taskId });
+     }
+
+    log.debug("task status: ", taskStatus);
+
+    // ---------------- CREATE FORM ----------------
     var form = ui.createForm({
       title: "Send Serial to Map/Reduce"
     });
@@ -22,132 +32,166 @@ function (ui, task, log, search) {
       label: "Serial Number"
     });
 
-    serialField.defaultValue = serial;
+    serialField.defaultValue = srno;
 
     form.addSubmitButton({
       label: "Send"
     });
+    if (taskStatus &&
+                (taskStatus.status === task.TaskStatus.PENDING ||
+                 taskStatus.status === task.TaskStatus.PROCESSING)) {
 
-    // ---------------- POST → RUN MAP REDUCE ---------------- // 
-    if (request.method === "POST" && serial) {
+                var status = form.addField({
+                    id: 'custpage_status',
+                    type: ui.FieldType.INLINEHTML,
+                    label: ' '
+                });
+
+                status.defaultValue = `
+                    <div style="padding:8px;background:#fff3cd;border:1px solid #ffeeba;color:#856404;">
+                        ⏳ Processing... page will auto-refresh.
+                    </div>
+                    <script>setTimeout(function(){location.reload();},4000);</script>
+                `;
+            }
+    if(taskId && taskStatus.status === task.TaskStatus.COMPLETE) {
+       showResults(form, srno);
+       log.debug("Task Status", "COMPLETED");
+    }
+
+
+    // ---------------- POST → RUN MAP REDUCE ----------------
+    if (request.method === "POST" && srno) {
 
       try {
+
         var mrTask = task.create({
           taskType: task.TaskType.MAP_REDUCE,
           scriptId: "customscript_invoicemrch",
           deploymentId: "customdeploy_invoicemrch",
           params: {
-            custscript_serialno: serial
+            custscript_serialno: srno
           }
         });
 
         var taskId = mrTask.submit();
-
-        log.audit("MR Triggered", {
-          serial: serial,
+        
+         log.audit("MR Triggered", {
+          serial: srno,
           taskId: taskId
         });
+        redirect.toSuitelet({
+          scriptId: runtime.getCurrentScript().id,
+          deploymentId: runtime.getCurrentScript().deploymentId,
+          parameters: {
+            taskid: taskId,
+            custpage_serial: request.parameters.custpage_serial
+          }
+        });
+
+       
 
       } catch (e) {
-        log.debug("error", e);
+
+        if (e.name === "MAP_REDUCE_ALREADY_RUNNING") {
+          log.debug("Map/Reduce already running");
+        } else {
+          throw e;
+        }
       }
     }
 
-    // ---------------- SHOW RESULTS ------------- //  
-    if (serial) {
 
-      var sublist = form.addSublist({
-        id: "custpage_results",
-        type: ui.SublistType.LIST,
-        label: "Transaction Results"
+    // functtion defintion
+
+    function showResults(form, srno) {
+
+  if (!srno) return;
+
+  var sublist = form.addSublist({
+    id: "custpage_results",
+    type: ui.SublistType.LIST,
+    label: "Transaction Results"
+  });
+
+  sublist.addField({
+    id: "col_serial",
+    type: ui.FieldType.TEXT,
+    label: "Serial"
+  });
+
+  sublist.addField({
+    id: "col_type",
+    type: ui.FieldType.TEXT,
+    label: "Transaction Type"
+  });
+
+  sublist.addField({
+    id: "col_date",
+    type: ui.FieldType.DATE,
+    label: "Transaction Date"
+  });
+
+  sublist.addField({
+    id: "col_location",
+    type: ui.FieldType.TEXT,
+    label: "Location"
+  });
+
+  var resultSearch = search.create({
+    type: "customrecord_serial_transactions",
+    filters: [
+      ["custrecordcustrecord_serial_no","startswith", srno]
+    ],
+    columns:
+   [
+      search.createColumn({name: "custrecordcustrecord_serial_no", label: "Serial No"}),
+      search.createColumn({name: "custrecord_custrecord_tran_date", label: "Transaction Date"}),
+      search.createColumn({name: "custrecord_custrecord_tran_type", label: "Transaction Type"})
+   ]
+  });
+       const searchResultCount = resultSearch.runPaged().count;
+       log.debug("resultSearch result count",searchResultCount);
+      var i=0;
+       resultSearch.run().each(function(result){
+              var tdt =     result.getValue('custrecord_custrecord_tran_date');
+              var serialNo = result.getValue('custrecordcustrecord_serial_no');
+              var tranType = result.getValue('custrecord_custrecord_tran_type');
+         
+              log.debug('tdt ',tdt);
+              log.debug("srno: ", serialNo);
+         
+               if (tdt) {
+                     sublist.setSublistValue({
+                      id: "col_date",
+                      line: i,
+                      value: tdt
+                    });
+               }
+         
+               if(serialNo) {
+                 sublist.setSublistValue({
+                   id: "col_serial",
+                   line: i,
+                   value: srno
+                 });
+               }
+         if(tranType) {
+           sublist.setSublistValue({
+             id: "col_type",
+             line: i,
+             value: tranType
+           })
+         }
+         i++;
+      return true;
       });
+     
+}
 
-      sublist.addField({
-        id: "col_serial",
-        type: ui.FieldType.TEXT,
-        label: "Serial"
-      });
-
-      sublist.addField({
-        id: "col_type",
-        type: ui.FieldType.TEXT,
-        label: "Transaction Type"
-      });
-
-      sublist.addField({
-        id: "col_number",
-        type: ui.FieldType.TEXT,
-        label: "Transaction Number"
-      });
-
-      sublist.addField({
-        id: "col_date",
-        type: ui.FieldType.DATE,
-        label: "Transaction Date"
-      });
-
-      sublist.addField({
-        id: "col_location",
-        type: ui.FieldType.TEXT,
-        label: "Location"
-      });
-
-      var resultSearch = search.create({
-        type: "customrecordcustomrecord_serial_invoice_",
-        filters: [
-          ["custrecordcustrecord_serialno", "is", serial]
-        ],
-        columns: [
-          "custrecordcustrecord_serialno",
-          "custrecordcustrecord_tran_type",
-          "custrecordcustrecord_tran_number",
-          "custrecordcustrecord_tran_date",
-          "custrecordcustrecord_location"
-        ]
-      });
-
-      var i = 0;
-
-      resultSearch.run().each(function(result) {
-
-        sublist.setSublistValue({
-          id: "col_serial",
-          line: i,
-          value: result.getValue("custrecordcustrecord_serialno") || ""
-        });
-
-        sublist.setSublistValue({
-          id: "col_type",
-          line: i,
-          value: result.getValue("custrecordcustrecord_tran_type") || ""
-        });
-
-        sublist.setSublistValue({
-          id: "col_number",
-          line: i,
-          value: result.getValue("custrecordcustrecord_tran_number") || ""
-        });
-
-        var dateVal = result.getValue("custrecordcustrecord_tran_date");
-        if (dateVal) {
-          sublist.setSublistValue({
-            id: "col_date",
-            line: i,
-            value: dateVal
-          });
-        }
-
-        sublist.setSublistValue({
-          id: "col_location",
-          line: i,
-          value: result.getValue("custrecordcustrecord_location") || ""
-        });
-        i++;
-        return true;
-      });
-    }
 
     response.writePage(form);
+   
   }
 
   return {
