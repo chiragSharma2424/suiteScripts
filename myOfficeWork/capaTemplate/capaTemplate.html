@@ -1,0 +1,295 @@
+<?xml version="1.0"?>
+<!DOCTYPE pdf PUBLIC "-//big.faceless.org//report" "report-1.1.dtd">
+<pdf>
+	<head>
+		<link name="NotoSans" type="font" subtype="truetype" src="${nsfont.NotoSans_Regular}" src-bold="${nsfont.NotoSans_Bold}" src-italic="${nsfont.NotoSans_Italic}" src-bolditalic="${nsfont.NotoSans_BoldItalic}" bytes="2" />
+		<macrolist>
+			<macro id="nlheader">
+
+    <table style="width:100%;" class="header">
+
+        <tr>
+
+            <!-- Logo -->
+
+            <td width="22%" valign="middle">
+
+                <#if companyInformation.logoUrl?has_content>
+                   <@filecabinet nstype="image" src="${companyInformation.logoUrl}" style="float: left; margin: 7px"/>
+                </#if> 
+
+            </td>
+
+            <!-- Heading -->
+
+            <td width="56%" align="center" valign="middle">
+
+                <span class="title" style="margin-right: 125px; font-weight: bold; font-size: 16px;">
+                    CORRECTIVE AND PREVENTIVE ACTION REPORT
+                </span>
+
+                <br/>
+
+            </td>
+        </tr>
+
+    </table>
+
+    <!--Format number-->
+<table style="margin-left: 450px;">
+    <tr>
+        <td><b>Format Number:</b> QF/QA/CAPA/001</td>
+    </tr>
+</table>
+
+
+  <!--Date, inspection date-->
+<table style="margin-left:450px;">
+    <tr>
+        <td><b>Date:</b> ${record.custrecord_qamstinsptdt}</td>
+    </tr>
+</table>
+
+</macro>
+	<macro id="nlfooter">
+				
+			</macro>
+		</macrolist>
+		<style>
+			
+* {
+    font-family: NotoSans, sans-serif;
+}
+
+table {
+    font-size:9pt;
+}
+
+td {
+    padding:3px 6px;
+}
+
+b{
+    font-weight:bold;
+}
+
+table.header td{
+    padding:0;
+}
+
+table.footer td{
+    padding:0;
+    font-size:8pt;
+}
+
+span.subtitle{
+    font-size:10pt;
+}
+
+span.datelabel{
+    font-size:9pt;
+}
+
+span.capano{
+    font-size:15pt;
+    font-weight:bold;
+    padding-left: 50pt;
+}
+
+span.tabletitle{
+    font-size:11pt;
+    font-weight:bold;
+}
+
+</style>
+
+	</head>
+	<body header="nlheader" header-height="65pt" footer="nlfooter" footer-height="20pt"
+padding="0.4in 0.4in 0.4in 0.4in"
+size="A4">
+
+
+    <!--vendor name-->
+    <table>
+        <tr>
+            <td style="font-weight: bold; font-size: 13px; margin-top: 5px;">To, <br></br>
+                <b>${record.custrecord_qamstsuplrnam.custentity_in_vend_legal_name}</b>
+            </td>
+        </tr>
+    </table>
+
+    <!--supplier addres, vendor address-->
+    <table>
+        <tr>
+            <td style="font-weight: bold; line-height: 13px;">${record.custrecord_qamstsuplrnam.address}</td>
+        </tr>
+    </table>
+
+
+<!--single table for qty received and part number-->
+<table width="100%" style="margin-top: 15px;">
+    <tr>
+
+        <!-- Left Column -->
+        <td width="35%" valign="top">
+            <table width="100%">
+                <tr>
+                    <td><b>Qty Received</b></td>
+                    <td>${record.custrecord_qamstqtyaccept}</td>
+                </tr>
+                <tr>
+                    <td><b>Qty Rejected</b></td>
+                    <td>${record.custrecord_qamstqtyreject}</td>
+                </tr>
+            
+            </table>
+        </td>
+
+        <!-- Right Column -->
+        <td width="65%" valign="top">
+
+        
+            <table width="100%">
+                <tr>
+                    <td style="height:-5px;"></td>
+                </tr>
+            </table>
+
+            <table width="100%" style="margin-left:20px;">
+                
+                <tr>
+                    <td><b>Part No</b></td>
+                    <td>${record.custrecord_qamstprtno.itemid}</td>
+                </tr>
+                 <tr>
+                    <td><b>Description</b></td>
+                    <td>${record.custrecord_qamstprtdesc}</td>
+                </tr>
+                <tr>
+                    <td><b>GRN No</b></td>
+                    <td>${record.custrecord_qamstgrnpono}</td>
+                </tr>
+                <tr>
+                    <td><b>PO No</b></td>
+                    <td>${record.custrecord_qamstgrnpono.createdfrom}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+	<table style="width: 100%; margin-top: 30px; line-height: 17px;">
+		<tr><td><span class="tabletitle">Problem Definition:</span></td></tr>
+		<tr><td style="font-size: 13px;">${record.custrecord_qamstvislobser}</td></tr>
+	</table>
+    <br></br>
+    <br></br>
+    
+	<table style="width: 100%; margin-top: 20px;">
+		<tr><td><span class="tabletitle">Containment Action:</span></td></tr>
+        <tr><td style="height: 40px;"></td></tr>	</table>
+    <br></br>
+
+	<table style="width: 100%;">
+		<tr><td><span class="tabletitle">Root Cause Analysis:</span></td></tr>
+		<tr><td style="font-size: 11px; margin-top: 15px; margin-left: 40px; font-weight: bold;">Why 1: </td></tr>
+        <tr><td style="font-size: 11px; margin-left: 40px; font-weight: bold; margin-top: 32px;">Why 2: </td></tr>
+        <tr><td style="font-size: 11px; margin-left: 40px; font-weight: bold; margin-top: 32px;">Why 3: </td></tr>
+        <tr><td style="font-size: 11px; margin-left: 40px; font-weight: bold; margin-top: 32px;">Why 4: </td></tr>
+        <tr><td style="font-size: 11px; margin-left: 40px; font-weight: bold; margin-top: 32px;">Why 5: </td></tr>
+        <tr><td style="font-size: 11px; margin-left: 40px; font-weight: bold; margin-top: 32px;">Root Cause: </td></tr>
+	</table>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br></br>
+    
+   
+	<table style="width: 100%; margin-top: 10px;">
+		<tr><td><span class="tabletitle">Corrective Action:</span></td></tr>
+		<tr><td style="height: 40px;"></td></tr>
+	</table>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+
+
+    <table style="width: 100%; margin-top: 10px;">
+		<tr><td><span class="tabletitle">Prevention:</span></td></tr>
+		<tr><td style="height: 40px;"></td></tr>
+	</table>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+
+    <table style="width: 100%; margin-top: 10px;">
+		<tr><td><span class="tabletitle">Review Documents:</span></td></tr>
+		<tr><td style="height: 40px;"></td></tr> 
+	</table>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+    <br> </br>
+
+
+    <table style="width: 100%; margin-top: 10px;">
+		<tr><td><span class="tabletitle">Problem Closure &amp; Monitoring Effectiveness Of Corrective Actions:</span></td></tr>
+		<tr><td style="height: 40px;"></td></tr>
+	</table>
+    <br></br>
+    <br></br>
+    <br></br>
+    <br> </br>
+    <br> </br>
+
+
+
+<!--footer-->
+	<table class="signbox" style="width: 100%;">
+		<tr>
+			<td style="width: 50%; font-weight: bold; font-size: 12px;" align="center">QA Sign</td>
+			<td style="width: 50%; font-weight: bold; font-size: 12px;" align="center">Supplier Sign</td>
+            <td style="width: 50%; font-weight: bold; font-size: 12px;" align="center">Closure Date</td>
+		</tr>
+	</table>
+
+<br></br>
+<br></br>
+    <!--images section-->
+    <table>
+        <tr>
+            <td style="font-weight: bold; font-size: 20px; margin-left: 220px;">Reference Images</td>
+        </tr>
+    </table>
+
+  
+
+ <#if images?? && images.files?? && (images.files?size > 0)>
+  <table style="margin-top: 30px; margin-left: 100px;">
+    <#-- Chunk images into sub-lists of 2 items per row -->
+    <#list images.files?chunk(2) as row>
+      <tr style="margin-top: 50px;">
+        <#list row as image>
+          <td >
+            <img src="${image}" width="150" height="150" style="margin-right: 200px;"/>
+          </td>
+        </#list>
+      </tr>
+    </#list>
+  </table>
+<#else>
+  <span>No Image Available</span>
+</#if>
+	</body>
+</pdf>
